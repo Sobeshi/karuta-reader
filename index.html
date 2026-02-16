@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>かるた読み手 - 競技かるた練習アプリ</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi44GL44KL44Gf6Kqt44G/5omLIiwic2hvcnRfbmFtZSI6IumhmuebruOBi+OCi+OBnyIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjZmZmZmZmIiwidGhlbWVfY29sb3IiOiIjNjY3ZWVhIn0=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* セットアップ画面 */
+        .setup-screen {
+            display: block;
+        }
+
+        .setup-screen.hidden {
+            display: none;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .hint {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 入力アクション */
+        .input-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        .camera-btn {
+            border-color: #ff9800;
+            color: #ff9800;
+        }
+
+        .camera-btn:hover {
+            background: #ff9800;
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+
+        .save-section {
+            margin-top: 10px;
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            background: white;
+            color: #4caf50;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-save:hover {
+            background: #4caf50;
+            color: white;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .card-set-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-set-item {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-set-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .card-set-item.preset {
+            border-color: #e3f2fd;
+            background: #f5f9ff;
+        }
+
+        .card-set-item.preset:hover {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+
+        .card-set-info {
+            flex: 1;
+        }
+
+        .card-set-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-set-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #2196f3;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-right: 8px;
+        }
+
+        .card-set-count {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .card-set-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .btn-icon:hover {
+            opacity: 1;
+        }
+
+        /* OCR処理中表示 */
+        .ocr-processing {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .ocr-processing .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ocr-processing p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        /* OCR結果編集 */
+        .ocr-result {
+            margin-bottom: 20px;
+        }
+
+        .ocr-result textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            margin-bottom: 10px;
+        }
+
+        .ocr-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* 保存フォーム */
+        .save-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .save-form input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .save-form input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .save-form-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-modal-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-modal-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-modal:active {
+            transform: scale(0.98);
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            margin-bottom: 10px;
+        }
+
+        /* モード選択 */
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .mode-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .mode-btn .mode-icon {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .mode-btn .mode-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .mode-btn .mode-desc {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        /* 間隔設定（自動モード時のみ表示） */
+        .interval-settings {
+            display: none;
+        }
+
+        .interval-settings.visible {
+            display: block;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .preset-btn {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .preset-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .custom-interval {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .custom-interval input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .custom-interval span {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* 速度設定 */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .speed-control input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .speed-value {
+            min-width: 50px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* ボタン */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:active {
+            background: #5568d3;
+            transform: scale(0.98);
+        }
+
+        /* 読み上げ画面 */
+        .reading-screen {
+            display: none;
+            min-height: 60vh;
+        }
+
+        .reading-screen.active {
+            display: block;
+        }
+
+        .reading-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .progress-info {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .mode-badge {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .mode-badge.auto {
+            background: #667eea;
+            color: white;
+        }
+
+        .card-display {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .status-indicator.reading {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-indicator.waiting {
+            background: #ff9800;
+            color: white;
+        }
+
+        .current-card {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .countdown {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 20px;
+        }
+
+        /* 次の札ボタン（大きく強調） */
+        .next-card-btn {
+            width: 100%;
+            padding: 20px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .next-card-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .next-card-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .keyboard-hint {
+            text-align: center;
+            color: #666;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .control-btn.pause {
+            background: #ff9800;
+            color: white;
+        }
+
+        .control-btn.reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        .control-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 完了画面 */
+        .completion-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .completion-message .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .completion-message h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .completion-message p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        /* アニメーション */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .pulse {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        /* レスポンシブ */
+        @media (max-width: 400px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .current-card {
+                font-size: 1.6em;
+            }
+
+            .preset-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Wake Lock用の非表示要素 */
+        .wake-lock-indicator {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            z-index: 1000;
+        }
+
+        .wake-lock-indicator.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="wake-lock-indicator" id="wakeLockIndicator">📱 画面オン</div>
+    
+    <div class="container">
+        <header>
+            <h1>🎴 かるた読み手</h1>
+            <p class="subtitle">競技かるた練習アプリ</p>
+        </header>
+
+        <!-- セットアップ画面 -->
+        <div class="setup-screen" id="setupScreen">
+            <div class="input-section">
+                <label for="cardInput">読み札を入力（1行に1枚）</label>
+                
+                <!-- 統合されたカードセット選択とカメラ機能 -->
+                <div class="input-actions">
+                    <button class="action-btn" id="selectSetBtn">📚 かるたを選ぶ</button>
+                    <button class="action-btn camera-btn" id="cameraBtn">📷 写真を追加</button>
+                </div>
+                
+                <textarea id="cardInput" placeholder="例：&#10;むらさめの つゆもまだひぬ まきのはに&#10;ありあけの つきまちいでつる さどのしま&#10;あさぼらけ ありあけのつきと みるまでに
+
+または「📷 写真を追加」でかるたの写真を選んでください"></textarea>
+                <div class="hint">※改行で区切って入力、または写真から自動読み取り</div>
+                
+                <!-- 保存ボタン -->
+                <div class="save-section">
+                    <button class="btn-save" id="saveSetBtn">💾 このセットを保存</button>
+                </div>
+            </div>
+            
+            <!-- カメラ/ギャラリー入力（非表示） -->
+            <input type="file" id="cameraInput" accept="image/*" style="display: none;">
+
+            <div class="control-group">
+                <label>読み上げモード</label>
+                <div class="mode-selector">
+                    <div class="mode-btn active" data-mode="auto">
+                        <div class="mode-icon">⏱️</div>
+                        <div class="mode-name">自動</div>
+                        <div class="mode-desc">間隔で自動進行</div>
+                    </div>
+                    <div class="mode-btn" data-mode="manual">
+                        <div class="mode-icon">👆</div>
+                        <div class="mode-name">手動</div>
+                        <div class="mode-desc">タップで進行</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group interval-settings visible" id="intervalSettings">
+                <label>札と札の間隔</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-interval="3">3秒</button>
+                    <button class="preset-btn active" data-interval="5">5秒</button>
+                    <button class="preset-btn" data-interval="10">10秒</button>
+                    <button class="preset-btn" data-interval="15">15秒</button>
+                </div>
+                <div class="custom-interval">
+                    <input type="number" id="customInterval" min="1" max="60" value="5">
+                    <span>秒</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>読み上げ速度</label>
+                <div class="speed-control">
+                    <span>遅</span>
+                    <input type="range" id="speedControl" min="0.5" max="2" step="0.1" value="1">
+                    <span>速</span>
+                    <span class="speed-value" id="speedValue">1.0x</span>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="startBtn">開始する</button>
+        </div>
+
+        <!-- 読み上げ画面 -->
+        <div class="reading-screen" id="readingScreen">
+            <div class="reading-header">
+                <div class="progress-info" id="progressInfo">0 / 0</div>
+                <div class="mode-badge" id="modeBadge">自動モード</div>
+            </div>
+
+            <div class="card-display">
+                <div class="status-indicator reading" id="statusIndicator">読み上げ中</div>
+                <div class="current-card fade-in" id="currentCard"></div>
+                <div class="countdown" id="countdown"></div>
+            </div>
+
+            <button class="next-card-btn pulse" id="nextCardBtn">
+                次の札 ▶
+            </button>
+            <div class="keyboard-hint">💡 スペースキーでも進めます</div>
+
+            <div class="control-buttons">
+                <button class="control-btn pause" id="pauseBtn">一時停止</button>
+                <button class="control-btn reset" id="resetBtn">終了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統合されたかるた選択モーダル -->
+    <div class="modal" id="selectSetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📚 かるたを選ぶ</h2>
+                <button class="modal-close" onclick="closeModal('selectSetModal')">×</button>
+            </div>
+            <div class="card-set-list" id="cardSetList"></div>
+        </div>
+    </div>
+
+    <!-- 写真選択モーダル -->
+    <div class="modal" id="photoSourceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📷 写真を追加</h2>
+                <button class="modal-close" onclick="closeModal('photoSourceModal')">×</button>
+            </div>
+            <div class="card-set-list">
+                <div class="card-set-item" onclick="selectPhotoSource('camera')">
+                    <div class="card-set-info">
+                        <div class="card-set-name">📸 カメラで撮影</div>
+                        <div class="card-set-count">その場で撮影して読み取り</div>
+                    </div>
+                </div>
+                <div class="card-set-item" onclick="selectPhotoSource('gallery')">
+                    <div class="card-set-info">
+                        <div class="card-set-name">🖼️ ギャラリーから選択</div>
+                        <div class="card-set-count">保存済みの写真から選択</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OCR結果確認・編集モーダル -->
+    <div class="modal" id="ocrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📷 読み取り結果</h2>
+                <button class="modal-close" onclick="closeModal('ocrModal')">×</button>
+            </div>
+            <div id="ocrContent"></div>
+        </div>
+    </div>
+
+    <!-- 保存フォームモーダル -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💾 セットを保存</h2>
+                <button class="modal-close" onclick="closeModal('saveModal')">×</button>
+            </div>
+            <div class="save-form">
+                <input type="text" id="setNameInput" placeholder="セット名（例: 百人一首、いろはかるた）" maxlength="30">
+                <div class="save-form-buttons">
+                    <button class="btn-modal btn-modal-secondary" onclick="closeModal('saveModal')">キャンセル</button>
+                    <button class="btn-modal btn-modal-primary" id="confirmSaveBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // プリセットカードセット
+        const PRESET_CARD_SETS = {
+            hyakunin: {
+                name: '百人一首（全100首）',
+                cards: [
+                    'あきのたの かりほのいほの とまをあらみ わがころもでは つゆにぬれつつ',
+                    'はるすぎて なつきにけらし しろたへの ころもほすてふ あまのかぐやま',
+                    'あしびきの やまどりのをの しだりをの ながながしよを ひとりかもねむ',
+                    'たごのうらに うちいでてみれば しろたへの ふじのたかねに ゆきはふりつつ',
+                    'おくやまに もみじふみわけ なくしかの こゑきくときぞ あきはかなしき',
+                    'かささぎの わたせるはしに おくしもの しろきをみれば よぞふけにける',
+                    'あまのはら ふりさけみれば かすがなる みかさのやまに いでしつきかも',
+                    'わがいほは みやこのたつみ しかぞすむ よをうぢやまと ひとはいふなり',
+                    'はなのいろは うつりにけりな いたづらに わがみよにふる ながめせしまに',
+                    'これやこの ゆくもかへるも わかれては しるもしらぬも あふさかのせき',
+                    'わたのはら やそしまかけて こぎいでぬと ひとにはつげよ あまのつりぶね',
+                    'あまつかぜ くものかよひぢ ふきとぢよ をとめのすがた しばしとどめむ',
+                    'つくばねの みねよりおつる みなのがは こひぞつもりて ふちとなりぬる',
+                    'みちのくの しのぶもぢずり たれゆゑに みだれそめにし われならなくに',
+                    'きみがため はるののにいでて わかなつむ わがころもでに ゆきはふりつつ',
+                    'たちわかれ いなばのやまの みねにおふる まつとしきかば いまかへりこむ',
+                    'ちはやぶる かみよもきかず たつたがは からくれなゐに みづくくるとは',
+                    'すみのえの きしによるなみ よるさへや ゆめのかよひぢ ひとめよくらむ',
+                    'なにはがた みじかきあしの ふしのまも あはでこのよを すぐしてよとや',
+                    'わびぬれば いまはたおなじ なにはなる みをつくしても あはむとぞおもふ',
+                    'いまこむと いひしばかりに ながつきの ありあけのつきを まちいでつるかな',
+                    'ふくからに あきのくさきの しをるれば むべやまかぜを あらしといふらむ',
+                    'つきみれば ちぢにものこそ かなしけれ わがみひとつの あきにはあらねど',
+                    'このたびは ぬさもとりあへず たむけやま もみぢのにしき かみのまにまに',
+                    'なにしおはば あふさかやまの さねかづら ひとにしられで くるよしもがな',
+                    'をぐらやま みねのもみぢば こころあらば いまひとたびの みゆきまたなむ',
+                    'みかのはら わきてながるる いづみがは いつみきとてか こひしかるらむ',
+                    'やまざとは ふゆぞさびしさ まさりける ひとめもくさも かれぬとおもへば',
+                    'こころあてに をらばやをらむ はつしもの おきまどはせる しらぎくのはな',
+                    'ありあけの つれなくみえし わかれより あかつきばかり うきものはなし',
+                    'あさぢふの をののしのはら しのぶれど あまりてなどか ひとのこひしき',
+                    'しのぶれど いろにいでにけり わがこひは ものやおもふと ひとのとふまで',
+                    'あさぼらけ ありあけのつきと みるまでに よしののさとに ふれるしらゆき',
+                    'たれをかも しるひとにせむ たかさごの まつもむかしの ともならなくに',
+                    'ひとはいさ こころもしらず ふるさとは はなぞむかしの かににほひける',
+                    'なつのよは まだよひながら あけぬるを くものいづこに つきやどるらむ',
+                    'しらつゆに かぜのふきしく あきののは つらぬきとめぬ たまぞちりける',
+                    'わすらるる みをばおもはず ちかひてし ひとのいのちの をしくもあるかな',
+                    'あさぢふの をののしのはら しのぶれど あまりてなどか ひとのこひしき',
+                    'しのぶれど いろにいでにけり わがこひは ものやおもふと ひとのとふまで',
+                    'こひすてふ わがなはまだき たちにけり ひとしれずこそ おもひそめしか',
+                    'ちぎりきな かたみにそでを しぼりつつ すゑのまつやま なみこさじとは',
+                    'あひみての のちのこころに くらぶれば むかしはものを おもはざりけり',
+                    'あふことの たえてしなくは なかなかに ひとをもみをも うらみざらまし',
+                    'あはれとも いふべきひとは おもほえで みのいたづらに なりぬべきかな',
+                    'ゆらのとを わたるふなびと かぢをたえ ゆくへもしらぬ こひのみちかな',
+                    'やへむぐら しげれるやどの さびしきに ひとこそみえね あきはきにけり',
+                    'かぜをいたみ いはうつなみの おのれのみ くだけてものを おもふころかな',
+                    'みかきもり ゑじのたくひの よるはもえ ひるはきえつつ ものをこそおもへ',
+                    'きみがため をしからざりし いのちさへ ながくもがなと おもひけるかな',
+                    'かくとだに えやはいぶきの さしもぐさ さしもしらじな もゆるおもひを',
+                    'あけぬれば くるるものとは しりながら なほうらめしき あさぼらけかな',
+                    'なげきつつ ひとりぬるよの あくるまは いかにひさしき ものとかはしる',
+                    'わすれじの ゆくすゑまでは かたければ けふをかぎりの いのちともがな',
+                    'たきのおとは たえてひさしく なりぬれど なこそながれて なほきこえけれ',
+                    'あらざらむ このよのほかの おもひでに いまひとたびの あふこともがな',
+                    'めぐりあひて みしやそれとも わかぬまに くもがくれにし よはのつきかな',
+                    'ありまやま ゐなのささはら かぜふけば いでそよひとを わすれやはする',
+                    'やすらはで ねなましものを さよふけて かたぶくまでの つきをみしかな',
+                    'おほえやま いくののみちの とほければ まだふみもみず あまのはしだて',
+                    'いにしへの ならのみやこの やへざくら けふここのへに にほひぬるかな',
+                    'よをこめて とりのそらねは はかるとも よにあふさかの せきはゆるさじ',
+                    'いまはただ おもひたえなむ とばかりを ひとづてならで いふよしもがな',
+                    'あさぼらけ うぢのかはぎり たえだえに あらはれわたる せぜのあじろぎ',
+                    'うらみわび ほさぬそでだに あるものを こひにくちなむ なこそをしけれ',
+                    'もろともに あはれとおもへ やまざくら はなよりほかに しるひともなし',
+                    'はるのよの ゆめばかりなる たまくらに かひなくたたむ なこそをしけれ',
+                    'こころにも あらでうきよに ながらへば こひしかるべき よはのつきかな',
+                    'あらしふく みむろのやまの もみぢばは たつたのかはの にしきなりけり',
+                    'さびしさに やどをたちいでて ながむれば いづこもおなじ あきのゆふぐれ',
+                    'ゆふされば かどたのいなば おとづれて あしのまろやに あきかぜぞふく',
+                    'おとにきく たかしのはまの あだなみは かけじやそでの ぬれもこそすれ',
+                    'たかさごの をのへのさくら さきにけり とやまのかすみ たたずもあらなむ',
+                    'うかりける ひとをはつせの やまおろし はげしかれとは いのらぬものを',
+                    'ちぎりおきし させもがつゆを いのちにて あはれことしの あきもいぬめり',
+                    'わたのはら こぎいでてみれば ひさかたの くもゐにまがふ おきつしらなみ',
+                    'せをはやみ いはにせかるる たきがはの われてもすゑに あはむとぞおもふ',
+                    'あはぢしま かよふちどりの なくこゑに いくよねざめぬ すまのせきもり',
+                    'あきかぜに たなびくくもの たえまより もれいづるつきの かげのさやけさ',
+                    'ながからむ こころもしらず くろかみの みだれてけさは ものをこそおもへ',
+                    'ほととぎす なきつるかたを ながむれば ただありあけの つきぞのこれる',
+                    'おもひわび さてもいのちは あるものを うきにたへぬは なみだなりけり',
+                    'よのなかよ みちこそなけれ おもひいる やまのおくにも しかぞなくなる',
+                    'ながらへば またこのごろや しのばれむ うしとみしよぞ いまはこひしき',
+                    'よもすがら ものおもふころは あけやらで ねやのひまさへ つれなかりけり',
+                    'なげけとて つきやはものを おもはする かこちがほなる わがなみだかな',
+                    'むらさめの つゆもまだひぬ まきのはに きりたちのぼる あきのゆふぐれ',
+                    'なにはえの あしのかりねの ひとよゆゑ みをつくしてや こひわたるべき',
+                    'たまのをよ たえなばたえね ながらへば しのぶることの よわりもぞする',
+                    'みせばやな をじまのあまの そでだにも ぬれにぞぬれし いろはかはらず',
+                    'きりぎりす なくやしもよの さむしろに ころもかたしき ひとりかもねむ',
+                    'わがそでは しほひにみえぬ おきのいしの ひとこそしらね かわくまもなし',
+                    'よのなかは つねにもがもな なぎさこぐ あまのをぶねの つなでかなしも',
+                    'みよしのの やまのあきかぜ さよふけて ふるさとさむく ころもうつなり',
+                    'おほけなく うきよのたみに おほふかな わがたつそまに すみぞめのそで',
+                    'はなさそふ あらしのにはの ゆきならで ふりゆくものは わがみなりけり',
+                    'こぬひとを まつほのうらの ゆふなぎに やくやもしほの みもこがれつつ',
+                    'かぜそよぐ ならのをがはの ゆふぐれは みそぎぞなつの しるしなりける',
+                    'ひとももし ひとつごころを つくさかの みねのたかねの はなをみましを',
+                    'ももしきや ふるきのきばの しのぶにも なほあまりある むかしなりけり',
+                    'よのなかよ みちこそなけれ おもひいる やまのおくにも しかぞなくなる'
+                ]
+            },
+            iroha: {
+                name: 'いろはかるた（江戸・全48首）',
+                cards: [
+                    'いぬもあるけば ぼうにあたる',
+                    'ろんよりしょうこ',
+                    'はなよりだんご',
+                    'にそくのわらじをはく',
+                    'ほねおりぞんのくたびれもうけ',
+                    'へたのよこずき',
+                    'とらぬたぬきのかわざんよう',
+                    'ちりもつもればやまとなる',
+                    'りょうやくはくちににがし',
+                    'ぬかにくぎ',
+                    'るいはともをよぶ',
+                    'をんなさんにんよればかしましい',
+                    'わらうかどにはふくきたる',
+                    'かえるのつらにみず',
+                    'よいはなのかげしたすずみ',
+                    'たでくうむしもすきずき',
+                    'れいもすぎればぶれいになる',
+                    'そのてはくわぬ',
+                    'つきとすっぽん',
+                    'ねこにこばん',
+                    'ならぬかんにんするがかんにん',
+                    'らくあればくあり',
+                    'むりがとおればどうりひっこむ',
+                    'うおごころあればみずごころ',
+                    'ゐぬもあるけばぼうにあたる',
+                    'のれんにうでおし',
+                    'おにのいぬまにせんたくする',
+                    'くちはわざわいのもと',
+                    'やぶからぼう',
+                    'まけるがかち',
+                    'けんもほろろ',
+                    'ふるきをすててあたらしきにつく',
+                    'こうはやさしきははづよし',
+                    'えてにほをかかす',
+                    'てんからくだった',
+                    'あたまかくしてしりかくさず',
+                    'さるもきからおちる',
+                    'きはながければまわりかねる',
+                    'ゆだんたいてき',
+                    'めのかたきはめ',
+                    'みはいちだいなもまつだい',
+                    'しからばうったて',
+                    'ゑんはいなもの',
+                    'ひとをみたらどろぼうとおもえ',
+                    'もちはもちや',
+                    'せいてはことをしそんじる',
+                    'すずめのなみだ',
+                    'ん'
+                ]
+            }
+        };
+
+        // グローバル変数
+        let cards = [];
+        let remainingCards = [];
+        let currentIndex = 0;
+        let isPaused = false;
+        let isReading = false;
+        let mode = 'auto'; // 'auto' or 'manual'
+        let interval = 5;
+        let speed = 1.0;
+        let countdownTimer = null;
+        let wakeLock = null;
+
+        // DOM要素
+        const setupScreen = document.getElementById('setupScreen');
+        const readingScreen = document.getElementById('readingScreen');
+        const cardInput = document.getElementById('cardInput');
+        const startBtn = document.getElementById('startBtn');
+        const nextCardBtn = document.getElementById('nextCardBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const currentCard = document.getElementById('currentCard');
+        const progressInfo = document.getElementById('progressInfo');
+        const modeBadge = document.getElementById('modeBadge');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const countdown = document.getElementById('countdown');
+        const speedControl = document.getElementById('speedControl');
+        const speedValue = document.getElementById('speedValue');
+        const intervalSettings = document.getElementById('intervalSettings');
+        const customInterval = document.getElementById('customInterval');
+        const wakeLockIndicator = document.getElementById('wakeLockIndicator');
+        const cameraInput = document.getElementById('cameraInput');
+
+        // カメラ専用とギャラリー専用の入力を動的に作成
+        const cameraOnlyInput = document.createElement('input');
+        cameraOnlyInput.type = 'file';
+        cameraOnlyInput.accept = 'image/*';
+        cameraOnlyInput.capture = 'environment';
+        cameraOnlyInput.style.display = 'none';
+        document.body.appendChild(cameraOnlyInput);
+
+        const galleryInput = document.createElement('input');
+        galleryInput.type = 'file';
+        galleryInput.accept = 'image/*';
+        galleryInput.style.display = 'none';
+        document.body.appendChild(galleryInput);
+
+        // Tesseract.js CDNを動的に読み込み
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        document.head.appendChild(script);
+
+        // ローカルストレージ管理
+        const STORAGE_KEY = 'karuta_saved_sets';
+
+        function getSavedSets() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                return saved ? JSON.parse(saved) : {};
+            } catch (e) {
+                console.error('Failed to load saved sets:', e);
+                return {};
+            }
+        }
+
+        function saveSet(name, cards) {
+            try {
+                const savedSets = getSavedSets();
+                savedSets[name] = {
+                    name: name,
+                    cards: cards,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(savedSets));
+                return true;
+            } catch (e) {
+                console.error('Failed to save set:', e);
+                alert('保存に失敗しました。ストレージ容量が不足している可能性があります。');
+                return false;
+            }
+        }
+
+        function deleteSet(name) {
+            try {
+                const savedSets = getSavedSets();
+                delete savedSets[name];
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(savedSets));
+                return true;
+            } catch (e) {
+                console.error('Failed to delete set:', e);
+                return false;
+            }
+        }
+
+        // モーダル管理
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 統合されたかるた選択表示
+        function showCardSets() {
+            const cardSetList = document.getElementById('cardSetList');
+            cardSetList.innerHTML = '';
+
+            // プリセットを追加
+            Object.keys(PRESET_CARD_SETS).forEach(key => {
+                const preset = PRESET_CARD_SETS[key];
+                const item = document.createElement('div');
+                item.className = 'card-set-item preset';
+                item.innerHTML = `
+                    <div class="card-set-info">
+                        <div class="card-set-name">
+                            <span class="card-set-badge">プリセット</span>${preset.name}
+                        </div>
+                        <div class="card-set-count">${preset.cards.length}枚</div>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    loadCardSet(preset.cards);
+                    closeModal('selectSetModal');
+                });
+                cardSetList.appendChild(item);
+            });
+
+            // 保存済みセットを追加
+            const savedSets = getSavedSets();
+            const setKeys = Object.keys(savedSets);
+
+            if (setKeys.length > 0) {
+                setKeys.forEach(key => {
+                    const set = savedSets[key];
+                    const item = document.createElement('div');
+                    item.className = 'card-set-item';
+                    item.innerHTML = `
+                        <div class="card-set-info">
+                            <div class="card-set-name">${set.name}</div>
+                            <div class="card-set-count">${set.cards.length}枚</div>
+                        </div>
+                        <div class="card-set-actions">
+                            <button class="btn-icon" onclick="event.stopPropagation(); deleteCardSet('${key}')" title="削除">🗑️</button>
+                        </div>
+                    `;
+                    item.addEventListener('click', (e) => {
+                        if (!e.target.closest('.btn-icon')) {
+                            loadCardSet(set.cards);
+                            closeModal('selectSetModal');
+                        }
+                    });
+                    cardSetList.appendChild(item);
+                });
+            }
+
+            openModal('selectSetModal');
+        }
+
+        // カードセットを削除
+        function deleteCardSet(key) {
+            if (confirm('このセットを削除してもよろしいですか？')) {
+                if (deleteSet(key)) {
+                    showCardSets(); // リストを更新
+                }
+            }
+        }
+
+        // カメラ/ギャラリー選択モーダルを表示
+        function openPhotoSource() {
+            openModal('photoSourceModal');
+        }
+
+        // 写真ソースを選択
+        function selectPhotoSource(source) {
+            closeModal('photoSourceModal');
+            if (source === 'camera') {
+                cameraOnlyInput.click();
+            } else {
+                galleryInput.click();
+            }
+        }
+
+        // OCR処理の共通関数
+        async function processImageOCR(file) {
+            // OCRモーダルを開いて処理中表示
+            const ocrContent = document.getElementById('ocrContent');
+            ocrContent.innerHTML = `
+                <div class="ocr-processing">
+                    <div class="spinner"></div>
+                    <p>画像を読み取っています...</p>
+                    <p style="font-size: 0.9em; color: #999;">少々お待ちください</p>
+                </div>
+            `;
+            openModal('ocrModal');
+
+            try {
+                // Tesseract.jsが読み込まれるまで待つ
+                let attempts = 0;
+                while (typeof Tesseract === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
+                if (typeof Tesseract === 'undefined') {
+                    throw new Error('OCRライブラリの読み込みに失敗しました');
+                }
+
+                // 画像をDataURLに変換（SecurityError回避）
+                const imageDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                // OCR実行
+                const result = await Tesseract.recognize(
+                    imageDataUrl,  // fileではなくDataURLを使用
+                    'jpn', // 日本語
+                    {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                const progress = Math.round(m.progress * 100);
+                                const progressP = ocrContent.querySelector('p');
+                                if (progressP) {
+                                    progressP.textContent = `読み取り中: ${progress}%`;
+                                }
+                            }
+                        }
+                    }
+                );
+
+                // テキストを行ごとに分割して表示
+                const text = result.data.text.trim();
+                
+                if (!text) {
+                    ocrContent.innerHTML = `
+                        <div class="ocr-processing">
+                            <p style="color: #ff9800;">⚠️ テキストが見つかりませんでした</p>
+                            <p style="font-size: 0.9em; color: #666;">写真がぼやけているか、文字が小さい可能性があります。<br>より鮮明な写真で試してみてください。</p>
+                            <button class="btn-modal btn-modal-primary" onclick="closeModal('ocrModal')" style="margin-top: 20px;">閉じる</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                showOCRResult(lines.join('\n'));
+
+            } catch (error) {
+                console.error('OCR error:', error);
+                
+                let errorMessage = '読み取りに失敗しました';
+                let errorDetail = '別の写真で試してみてください';
+                
+                if (error.message && error.message.includes('insecure')) {
+                    errorMessage = 'セキュリティエラー';
+                    errorDetail = 'このアプリはHTTPS環境で実行する必要があります。<br><br>Netlify、Vercel、GitHub Pagesなどで公開してご利用ください。';
+                } else if (error.message && error.message.includes('ライブラリ')) {
+                    errorMessage = 'OCRライブラリの読み込みエラー';
+                    errorDetail = 'インターネット接続を確認して、ページを再読み込みしてください。';
+                }
+                
+                ocrContent.innerHTML = `
+                    <div class="ocr-processing">
+                        <p style="color: #dc3545;">❌ ${errorMessage}</p>
+                        <p style="font-size: 0.9em; color: #666;">${errorDetail}</p>
+                        <button class="btn-modal btn-modal-primary" onclick="closeModal('ocrModal')" style="margin-top: 20px;">閉じる</button>
+                    </div>
+                `;
+            }
+        }
+
+        // カメラ入力の変更イベント
+        cameraOnlyInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await processImageOCR(file);
+                e.target.value = '';
+            }
+        });
+
+        // ギャラリー入力の変更イベント
+        galleryInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await processImageOCR(file);
+                e.target.value = '';
+            }
+        });
+
+        // 旧来のcameraInput（削除予定だが互換性のため残す）
+        cameraInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await processImageOCR(file);
+                e.target.value = '';
+            }
+        });
+
+        // OCR結果を表示・編集可能に
+        function showOCRResult(text) {
+            const ocrContent = document.getElementById('ocrContent');
+            ocrContent.innerHTML = `
+                <div class="ocr-result">
+                    <p style="margin-bottom: 10px; color: #666;">読み取った内容を確認・編集してください：</p>
+                    <textarea id="ocrTextarea">${text}</textarea>
+                    <div class="ocr-buttons">
+                        <button class="btn-modal btn-modal-secondary" onclick="closeModal('ocrModal')">キャンセル</button>
+                        <button class="btn-modal btn-modal-primary" onclick="applyOCRResult()">この内容を使う</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // OCR結果を適用
+        function applyOCRResult() {
+            const ocrTextarea = document.getElementById('ocrTextarea');
+            if (ocrTextarea) {
+                cardInput.value = ocrTextarea.value;
+                closeModal('ocrModal');
+            }
+        }
+
+        // カードセットを読み込み
+        function loadCardSet(cards) {
+            cardInput.value = cards.join('\n');
+        }
+
+        // 保存フォームを表示
+        function showSaveForm() {
+            const input = cardInput.value.trim();
+            if (!input) {
+                alert('保存する札を入力してください');
+                return;
+            }
+
+            const cards = input.split('\n').filter(line => line.trim() !== '');
+            if (cards.length === 0) {
+                alert('有効な札がありません');
+                return;
+            }
+
+            document.getElementById('setNameInput').value = '';
+            openModal('saveModal');
+        }
+
+        // セットを保存
+        function confirmSave() {
+            const name = document.getElementById('setNameInput').value.trim();
+            if (!name) {
+                alert('セット名を入力してください');
+                return;
+            }
+
+            const input = cardInput.value.trim();
+            const cards = input.split('\n').filter(line => line.trim() !== '');
+
+            if (saveSet(name, cards)) {
+                alert('保存しました！');
+                closeModal('saveModal');
+            }
+        }
+
+        // イベントリスナー設定
+        document.getElementById('selectSetBtn').addEventListener('click', showCardSets);
+        document.getElementById('cameraBtn').addEventListener('click', openPhotoSource);
+        document.getElementById('saveSetBtn').addEventListener('click', showSaveForm);
+        document.getElementById('confirmSaveBtn').addEventListener('click', confirmSave);
+
+        // モーダル外クリックで閉じる
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+
+        // モード選択
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                
+                if (mode === 'auto') {
+                    intervalSettings.classList.add('visible');
+                } else {
+                    intervalSettings.classList.remove('visible');
+                }
+            });
+        });
+
+        // 間隔プリセット選択
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                interval = parseInt(btn.dataset.interval);
+                customInterval.value = interval;
+            });
+        });
+
+        // カスタム間隔入力
+        customInterval.addEventListener('input', (e) => {
+            interval = parseInt(e.target.value) || 5;
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        });
+
+        // 速度コントロール
+        speedControl.addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            speedValue.textContent = `${speed.toFixed(1)}x`;
+        });
+
+        // 開始ボタン
+        startBtn.addEventListener('click', () => {
+            const input = cardInput.value.trim();
+            if (!input) {
+                alert('読み札を入力してください');
+                return;
+            }
+
+            cards = input.split('\n').filter(line => line.trim() !== '');
+            if (cards.length === 0) {
+                alert('有効な札がありません');
+                return;
+            }
+
+            // 初期化
+            remainingCards = [...cards];
+            shuffleArray(remainingCards);
+            currentIndex = 0;
+            isPaused = false;
+
+            // 画面切り替え
+            setupScreen.classList.add('hidden');
+            readingScreen.classList.add('active');
+
+            // DOM要素を取得（再取得）
+            const currentModeBadge = document.getElementById('modeBadge');
+            
+            // モード表示
+            if (mode === 'auto') {
+                currentModeBadge.textContent = '自動モード';
+                currentModeBadge.classList.add('auto');
+            } else {
+                currentModeBadge.textContent = '手動モード';
+                currentModeBadge.classList.remove('auto');
+            }
+
+            // Wake Lock を試みる
+            requestWakeLock();
+
+            // 最初の札を読む
+            readNextCard();
+        });
+
+        // 次の札ボタン
+        nextCardBtn.addEventListener('click', () => {
+            skipToNext();
+        });
+
+        // 一時停止ボタンのハンドラー関数
+        function handlePause() {
+            if (isPaused) {
+                isPaused = false;
+                document.getElementById('pauseBtn').textContent = '一時停止';
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+                if (mode === 'auto' && !isReading) {
+                    startCountdown();
+                }
+            } else {
+                isPaused = true;
+                document.getElementById('pauseBtn').textContent = '再開';
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.pause();
+                }
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+            }
+        }
+
+        // リセットボタンのハンドラー関数
+        function handleReset() {
+            resetApp();
+        }
+
+        // 一時停止ボタン
+        pauseBtn.addEventListener('click', handlePause);
+
+        // リセットボタン
+        resetBtn.addEventListener('click', handleReset);
+
+        // キーボードショートカット（スペースキー）
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && readingScreen.classList.contains('active')) {
+                e.preventDefault();
+                skipToNext();
+            }
+        });
+
+        // 次の札にスキップ
+        function skipToNext() {
+            if (isReading) {
+                // 読み上げ中ならキャンセルして次へ
+                window.speechSynthesis.cancel();
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            const countdownElement = document.getElementById('countdown');
+            if (countdownElement) {
+                countdownElement.textContent = '';
+            }
+            
+            currentIndex++;
+            if (currentIndex < remainingCards.length) {
+                readNextCard();
+            }
+        }
+
+        // 次の札を読む
+        function readNextCard() {
+            if (currentIndex >= remainingCards.length) {
+                showCompletion();
+                return;
+            }
+
+            const card = remainingCards[currentIndex];
+            
+            // DOM要素を毎回取得（キャッシュしない）
+            const currentCardElement = document.getElementById('currentCard');
+            const progressInfoElement = document.getElementById('progressInfo');
+            const statusIndicatorElement = document.getElementById('statusIndicator');
+            const countdownElement = document.getElementById('countdown');
+            const nextCardBtnElement = document.getElementById('nextCardBtn');
+            
+            // UI更新
+            if (currentCardElement) {
+                currentCardElement.textContent = card;
+                currentCardElement.classList.remove('fade-in');
+                void currentCardElement.offsetWidth; // リフロー
+                currentCardElement.classList.add('fade-in');
+            }
+            
+            if (progressInfoElement) {
+                progressInfoElement.textContent = `${currentIndex + 1} / ${remainingCards.length}`;
+            }
+            
+            if (statusIndicatorElement) {
+                statusIndicatorElement.textContent = '読み上げ中';
+                statusIndicatorElement.classList.remove('waiting');
+                statusIndicatorElement.classList.add('reading');
+            }
+            
+            if (countdownElement) {
+                countdownElement.textContent = '';
+            }
+
+            isReading = true;
+            if (nextCardBtnElement) {
+                nextCardBtnElement.classList.add('pulse');
+            }
+
+            // 音声読み上げ
+            const utterance = new SpeechSynthesisUtterance(card);
+            utterance.lang = 'ja-JP';
+            utterance.rate = speed;
+            
+            utterance.onend = () => {
+                isReading = false;
+                const nextBtn = document.getElementById('nextCardBtn');
+                if (nextBtn) {
+                    nextBtn.classList.remove('pulse');
+                }
+                
+                if (isPaused) return;
+
+                const statusInd = document.getElementById('statusIndicator');
+                if (mode === 'auto') {
+                    if (statusInd) {
+                        statusInd.textContent = '待機中';
+                        statusInd.classList.remove('reading');
+                        statusInd.classList.add('waiting');
+                    }
+                    startCountdown();
+                } else {
+                    if (statusInd) {
+                        statusInd.textContent = '次の札を押してください';
+                        statusInd.classList.remove('reading');
+                        statusInd.classList.add('waiting');
+                    }
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // カウントダウン開始
+        function startCountdown() {
+            let remaining = interval;
+            const countdownElement = document.getElementById('countdown');
+            if (countdownElement) {
+                countdownElement.textContent = remaining;
+            }
+
+            countdownTimer = setInterval(() => {
+                remaining--;
+                const cd = document.getElementById('countdown');
+                if (remaining > 0) {
+                    if (cd) cd.textContent = remaining;
+                } else {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    if (cd) cd.textContent = '';
+                    currentIndex++;
+                    if (currentIndex < remainingCards.length && !isPaused) {
+                        readNextCard();
+                    } else if (currentIndex >= remainingCards.length) {
+                        showCompletion();
+                    }
+                }
+            }, 1000);
+        }
+
+        // 完了表示
+        function showCompletion() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+
+            readingScreen.innerHTML = `
+                <div class="completion-message">
+                    <div class="icon">🎉</div>
+                    <h2>お疲れ様でした！</h2>
+                    <p>全${cards.length}枚の札を読み終わりました</p>
+                    <button class="btn btn-primary" onclick="resetApp()">最初に戻る</button>
+                </div>
+            `;
+
+            releaseWakeLock();
+        }
+
+        // アプリをリセット
+        function resetApp() {
+            console.log('Reset button clicked'); // デバッグ用
+            
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+
+            // 変数をリセット
+            cards = [];
+            remainingCards = [];
+            currentIndex = 0;
+            isPaused = false;
+            isReading = false;
+
+            // 画面を切り替え
+            readingScreen.classList.remove('active');
+            setupScreen.classList.remove('hidden');
+            
+            // 読み上げ画面を初期状態に戻す
+            readingScreen.innerHTML = `
+                <div class="reading-header">
+                    <div class="progress-info" id="progressInfo">0 / 0</div>
+                    <div class="mode-badge" id="modeBadge">自動モード</div>
+                </div>
+                <div class="card-display">
+                    <div class="status-indicator reading" id="statusIndicator">読み上げ中</div>
+                    <div class="current-card fade-in" id="currentCard"></div>
+                    <div class="countdown" id="countdown"></div>
+                </div>
+                <button class="next-card-btn pulse" id="nextCardBtn">次の札 ▶</button>
+                <div class="keyboard-hint">💡 スペースキーでも進めます</div>
+                <div class="control-buttons">
+                    <button class="control-btn pause" id="pauseBtn">一時停止</button>
+                    <button class="control-btn reset" id="resetBtn">終了</button>
+                </div>
+            `;
+
+            // イベントリスナーを再設定
+            setTimeout(() => {
+                const newNextBtn = document.getElementById('nextCardBtn');
+                const newPauseBtn = document.getElementById('pauseBtn');
+                const newResetBtn = document.getElementById('resetBtn');
+                
+                if (newNextBtn) {
+                    newNextBtn.addEventListener('click', () => skipToNext());
+                }
+                if (newPauseBtn) {
+                    newPauseBtn.addEventListener('click', handlePause);
+                }
+                if (newResetBtn) {
+                    newResetBtn.addEventListener('click', handleReset);
+                }
+                
+                console.log('Event listeners re-attached'); // デバッグ用
+            }, 0);
+
+            releaseWakeLock();
+        }
+
+        // 配列をシャッフル
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Wake Lock（画面スリープ防止）
+        async function requestWakeLock() {
+            // Wake Lock APIが利用可能で、かつHTTPS環境の場合のみ実行
+            if ('wakeLock' in navigator && window.isSecureContext) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLockIndicator.classList.add('active');
+                    
+                    wakeLock.addEventListener('release', () => {
+                        wakeLockIndicator.classList.remove('active');
+                    });
+                } catch (err) {
+                    // Wake Lockが失敗しても処理を続行（エラーは無視）
+                    console.log('Wake Lock is not available:', err.name);
+                }
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                try {
+                    wakeLock.release();
+                } catch (err) {
+                    // リリース時のエラーも無視
+                    console.log('Wake Lock release error:', err);
+                }
+                wakeLock = null;
+            }
+        }
+
+        // ページ離脱時にWake Lockを解放
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+    </script>
+</body>
+</html>
