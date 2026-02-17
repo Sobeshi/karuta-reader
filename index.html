@@ -774,58 +774,6 @@
             }
         }
 
-        /* 音声選択 */
-        .voice-select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 15px;
-            font-family: inherit;
-            background: white;
-            color: #333;
-            cursor: pointer;
-            margin-bottom: 8px;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23667eea' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            padding-right: 40px;
-        }
-
-        .voice-select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .voice-hint {
-            font-size: 0.85em;
-            color: #999;
-            margin-bottom: 10px;
-        }
-
-        .btn-test-voice {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            background: white;
-            color: #667eea;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-test-voice:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-test-voice:active {
-            transform: scale(0.98);
-        }
-
         /* Wake Lock用の非表示要素 */
         .wake-lock-indicator {
             display: none;
@@ -917,15 +865,6 @@
                     <span>速</span>
                     <span class="speed-value" id="speedValue">1.0x</span>
                 </div>
-            </div>
-
-            <div class="control-group">
-                <label>音声</label>
-                <select id="voiceSelect" class="voice-select">
-                    <option value="">読み込み中...</option>
-                </select>
-                <div class="voice-hint">💡 端末によって使える音声が異なります</div>
-                <button class="btn-test-voice" id="testVoiceBtn">▶ この音声でテスト再生</button>
             </div>
 
             <button class="btn btn-primary" id="startBtn">開始する</button>
@@ -1581,81 +1520,22 @@
             speedValue.textContent = `${speed.toFixed(1)}x`;
         });
 
-        // 音声選択
-        const voiceSelect = document.getElementById('voiceSelect');
-        let voices = [];
+        // Kyoko音声を自動選択（なければ日本語音声にフォールバック）
         let selectedVoice = null;
 
         function loadVoices() {
-            voices = window.speechSynthesis.getVoices();
-            
-            // 日本語音声を優先してフィルタリング
-            const japaneseVoices = voices.filter(v => v.lang.startsWith('ja'));
-            const otherVoices = voices.filter(v => !v.lang.startsWith('ja'));
-            const sortedVoices = [...japaneseVoices, ...otherVoices];
-
-            voiceSelect.innerHTML = '';
-
-            if (sortedVoices.length === 0) {
-                voiceSelect.innerHTML = '<option value="">音声が見つかりません</option>';
-                return;
-            }
-
-            // 日本語グループ
-            if (japaneseVoices.length > 0) {
-                const jpGroup = document.createElement('optgroup');
-                jpGroup.label = '🇯🇵 日本語';
-                japaneseVoices.forEach((voice, i) => {
-                    const option = document.createElement('option');
-                    option.value = voice.name;
-                    option.textContent = voice.name.replace('Microsoft ', '').replace(' - Japanese Japan', '');
-                    option.dataset.index = voices.indexOf(voice);
-                    jpGroup.appendChild(option);
-                });
-                voiceSelect.appendChild(jpGroup);
-            }
-
-            // その他グループ
-            if (otherVoices.length > 0) {
-                const otherGroup = document.createElement('optgroup');
-                otherGroup.label = '🌐 その他';
-                otherVoices.forEach((voice) => {
-                    const option = document.createElement('option');
-                    option.value = voice.name;
-                    option.textContent = `${voice.name} (${voice.lang})`;
-                    option.dataset.index = voices.indexOf(voice);
-                    otherGroup.appendChild(option);
-                });
-                voiceSelect.appendChild(otherGroup);
-            }
-
-            // デフォルトで日本語音声を選択
-            if (japaneseVoices.length > 0) {
-                voiceSelect.value = japaneseVoices[0].name;
-                selectedVoice = japaneseVoices[0];
-            }
+            const voices = window.speechSynthesis.getVoices();
+            // Kyokoを最優先、次にO-ren、次に日本語音声、最後にデフォルト
+            selectedVoice =
+                voices.find(v => v.name === 'Kyoko') ||
+                voices.find(v => v.name === 'O-ren') ||
+                voices.find(v => v.lang === 'ja-JP') ||
+                voices.find(v => v.lang.startsWith('ja')) ||
+                null;
         }
 
-        // 音声リストが変更されたら更新
         window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices(); // 初回読み込み
-
-        // 音声選択変更
-        voiceSelect.addEventListener('change', () => {
-            const selectedName = voiceSelect.value;
-            selectedVoice = voices.find(v => v.name === selectedName) || null;
-        });
-
-        // テスト再生
-        document.getElementById('testVoiceBtn').addEventListener('click', () => {
-            window.speechSynthesis.cancel();
-            const testText = 'あきのたの かりほのいほの とまをあらみ';
-            const utterance = new SpeechSynthesisUtterance(testText);
-            utterance.lang = 'ja-JP';
-            utterance.rate = speed;
-            if (selectedVoice) utterance.voice = selectedVoice;
-            window.speechSynthesis.speak(utterance);
-        });
+        loadVoices();
 
         // 開始ボタン
         startBtn.addEventListener('click', () => {
