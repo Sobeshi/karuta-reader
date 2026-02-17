@@ -76,4 +76,5 @@ MIT License
 
 ## 作者
 
-作成: Sobeshi
+Sobeshi  
+作成: 2026
