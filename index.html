@@ -1295,6 +1295,7 @@
         let interval = 5;
         let speed = 1.0;
         let countdownTimer = null;
+        let prefixTimer = null; // 頭文字と本文の間のタイマー
         let wakeLock = null;
 
         // DOM要素
@@ -1780,8 +1781,11 @@
         // 次の札にスキップ
         function skipToNext() {
             if (isReading) {
-                // 読み上げ中ならキャンセルして次へ
                 window.speechSynthesis.cancel();
+            }
+            if (prefixTimer) {
+                clearTimeout(prefixTimer);
+                prefixTimer = null;
             }
             if (countdownTimer) {
                 clearInterval(countdownTimer);
@@ -1806,32 +1810,37 @@
             }
 
             const card = remainingCards[currentIndex];
-            
+
+            // | で区切られている場合、頭文字と本文に分割
+            const hasSeparator = card.includes('|');
+            const prefix = hasSeparator ? card.split('|')[0].trim() : null;
+            const body   = hasSeparator ? card.split('|')[1].trim() : card;
+
             // DOM要素を毎回取得（キャッシュしない）
-            const currentCardElement = document.getElementById('currentCard');
+            const currentCardElement  = document.getElementById('currentCard');
             const progressInfoElement = document.getElementById('progressInfo');
             const statusIndicatorElement = document.getElementById('statusIndicator');
-            const countdownElement = document.getElementById('countdown');
-            const nextCardBtnElement = document.getElementById('nextCardBtn');
-            
-            // UI更新
+            const countdownElement    = document.getElementById('countdown');
+            const nextCardBtnElement  = document.getElementById('nextCardBtn');
+
+            // UI：表示は頭文字＋本文をまとめて表示
             if (currentCardElement) {
-                currentCardElement.textContent = card;
+                currentCardElement.textContent = hasSeparator ? `${prefix}　${body}` : body;
                 currentCardElement.classList.remove('fade-in');
-                void currentCardElement.offsetWidth; // リフロー
+                void currentCardElement.offsetWidth;
                 currentCardElement.classList.add('fade-in');
             }
-            
+
             if (progressInfoElement) {
                 progressInfoElement.textContent = `${currentIndex + 1} / ${remainingCards.length}`;
             }
-            
+
             if (statusIndicatorElement) {
                 statusIndicatorElement.textContent = '読み上げ中';
                 statusIndicatorElement.classList.remove('waiting');
                 statusIndicatorElement.classList.add('reading');
             }
-            
+
             if (countdownElement) {
                 countdownElement.textContent = '';
             }
@@ -1841,19 +1850,12 @@
                 nextCardBtnElement.classList.add('pulse');
             }
 
-            // 音声読み上げ
-            const utterance = new SpeechSynthesisUtterance(card);
-            utterance.lang = 'ja-JP';
-            utterance.rate = speed;
-            if (selectedVoice) utterance.voice = selectedVoice;
-            
-            utterance.onend = () => {
+            // 読み上げ完了後の処理（共通）
+            function onReadingEnd() {
                 isReading = false;
                 const nextBtn = document.getElementById('nextCardBtn');
-                if (nextBtn) {
-                    nextBtn.classList.remove('pulse');
-                }
-                
+                if (nextBtn) nextBtn.classList.remove('pulse');
+
                 if (isPaused) return;
 
                 const statusInd = document.getElementById('statusIndicator');
@@ -1871,9 +1873,41 @@
                         statusInd.classList.add('waiting');
                     }
                 }
-            };
+            }
 
-            window.speechSynthesis.speak(utterance);
+            if (hasSeparator) {
+                // 頭文字を読む
+                const prefixUtterance = new SpeechSynthesisUtterance(prefix);
+                prefixUtterance.lang = 'ja-JP';
+                prefixUtterance.rate = speed;
+                if (selectedVoice) prefixUtterance.voice = selectedVoice;
+
+                // 頭文字が終わったら間を置いて本文を読む
+                prefixUtterance.onend = () => {
+                    if (isPaused) return;
+                    prefixTimer = setTimeout(() => {
+                        prefixTimer = null;
+                        if (isPaused) return;
+                        const bodyUtterance = new SpeechSynthesisUtterance(body);
+                        bodyUtterance.lang = 'ja-JP';
+                        bodyUtterance.rate = speed;
+                        if (selectedVoice) bodyUtterance.voice = selectedVoice;
+                        bodyUtterance.onend = onReadingEnd;
+                        window.speechSynthesis.speak(bodyUtterance);
+                    }, 800); // 頭文字と本文の間：0.8秒
+                };
+
+                window.speechSynthesis.speak(prefixUtterance);
+
+            } else {
+                // 区切りなし：そのまま全文読み上げ
+                const utterance = new SpeechSynthesisUtterance(body);
+                utterance.lang = 'ja-JP';
+                utterance.rate = speed;
+                if (selectedVoice) utterance.voice = selectedVoice;
+                utterance.onend = onReadingEnd;
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
         // カウントダウン開始
