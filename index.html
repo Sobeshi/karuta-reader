@@ -124,15 +124,15 @@
             transform: translateY(0);
         }
 
-        .camera-btn {
-            border-color: #ff9800;
-            color: #ff9800;
+        .file-btn {
+            border-color: #4caf50;
+            color: #4caf50;
         }
 
-        .camera-btn:hover {
-            background: #ff9800;
+        .file-btn:hover {
+            background: #4caf50;
             color: white;
-            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
         }
 
         .save-section {
@@ -807,16 +807,16 @@
             <div class="input-section">
                 <label for="cardInput">読み札を入力（1行に1枚）</label>
                 
-                <!-- 統合されたカードセット選択とカメラ機能 -->
+                <!-- 統合されたカードセット選択とファイルアップロード機能 -->
                 <div class="input-actions">
                     <button class="action-btn" id="selectSetBtn">📚 かるたを選ぶ</button>
-                    <button class="action-btn camera-btn" id="cameraBtn">📷 写真を追加</button>
+                    <button class="action-btn file-btn" id="fileUploadBtn">📄 ファイルから読み込む</button>
                 </div>
                 
                 <textarea id="cardInput" placeholder="例：&#10;むらさめの つゆもまだひぬ まきのはに&#10;ありあけの つきまちいでつる さどのしま&#10;あさぼらけ ありあけのつきと みるまでに
 
-または「📷 写真を追加」でかるたの写真を選んでください"></textarea>
-                <div class="hint">※改行で区切って入力、または写真から自動読み取り</div>
+または「📄 ファイルから読み込む」でCSV/TXT/Excelファイルを選択"></textarea>
+                <div class="hint">※改行で区切って入力、またはファイルから読み込み</div>
                 
                 <!-- 保存ボタン -->
                 <div class="save-section">
@@ -906,38 +906,52 @@
         </div>
     </div>
 
-    <!-- 写真選択モーダル -->
-    <div class="modal" id="photoSourceModal">
+    <!-- ファイルアップロードモーダル -->
+    <div class="modal" id="fileUploadModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📷 写真を追加</h2>
-                <button class="modal-close" onclick="closeModal('photoSourceModal')">×</button>
+                <h2>📄 ファイルから読み込む</h2>
+                <button class="modal-close" onclick="closeModal('fileUploadModal')">×</button>
             </div>
             <div class="card-set-list">
-                <div class="card-set-item" onclick="selectPhotoSource('camera')">
+                <div class="card-set-item" onclick="selectFileType('txt')">
                     <div class="card-set-info">
-                        <div class="card-set-name">📸 カメラで撮影</div>
-                        <div class="card-set-count">その場で撮影して読み取り</div>
+                        <div class="card-set-name">📝 テキストファイル (.txt)</div>
+                        <div class="card-set-count">1行に1枚の形式で保存されたファイル</div>
                     </div>
                 </div>
-                <div class="card-set-item" onclick="selectPhotoSource('gallery')">
+                <div class="card-set-item" onclick="selectFileType('csv')">
                     <div class="card-set-info">
-                        <div class="card-set-name">🖼️ ギャラリーから選択</div>
-                        <div class="card-set-count">保存済みの写真から選択</div>
+                        <div class="card-set-name">📊 CSVファイル (.csv)</div>
+                        <div class="card-set-count">Excelやスプレッドシートから保存</div>
                     </div>
                 </div>
+                <div class="card-set-item" onclick="selectFileType('xlsx')">
+                    <div class="card-set-info">
+                        <div class="card-set-name">📗 Excelファイル (.xlsx)</div>
+                        <div class="card-set-count">Excel形式のファイル</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <p style="font-size: 0.9em; color: #666; margin: 0;">
+                    <strong>💡 ファイル形式：</strong><br>
+                    • 1行に1枚の札を記入<br>
+                    • 改行で区切る<br>
+                    • UTF-8形式で保存
+                </p>
             </div>
         </div>
     </div>
 
-    <!-- OCR結果確認・編集モーダル -->
-    <div class="modal" id="ocrModal">
+    <!-- ファイル結果確認・編集モーダル -->
+    <div class="modal" id="fileResultModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📷 読み取り結果</h2>
-                <button class="modal-close" onclick="closeModal('ocrModal')">×</button>
+                <h2>📄 読み込み結果</h2>
+                <button class="modal-close" onclick="closeModal('fileResultModal')">×</button>
             </div>
-            <div id="ocrContent"></div>
+            <div id="fileResultContent"></div>
         </div>
     </div>
 
@@ -1152,26 +1166,30 @@
         const intervalSettings = document.getElementById('intervalSettings');
         const customInterval = document.getElementById('customInterval');
         const wakeLockIndicator = document.getElementById('wakeLockIndicator');
-        const cameraInput = document.getElementById('cameraInput');
 
-        // カメラ専用とギャラリー専用の入力を動的に作成
-        const cameraOnlyInput = document.createElement('input');
-        cameraOnlyInput.type = 'file';
-        cameraOnlyInput.accept = 'image/*';
-        cameraOnlyInput.capture = 'environment';
-        cameraOnlyInput.style.display = 'none';
-        document.body.appendChild(cameraOnlyInput);
+        // ファイル入力要素を動的に作成
+        const txtInput = document.createElement('input');
+        txtInput.type = 'file';
+        txtInput.accept = '.txt';
+        txtInput.style.display = 'none';
+        document.body.appendChild(txtInput);
 
-        const galleryInput = document.createElement('input');
-        galleryInput.type = 'file';
-        galleryInput.accept = 'image/*';
-        galleryInput.style.display = 'none';
-        document.body.appendChild(galleryInput);
+        const csvInput = document.createElement('input');
+        csvInput.type = 'file';
+        csvInput.accept = '.csv';
+        csvInput.style.display = 'none';
+        document.body.appendChild(csvInput);
 
-        // Tesseract.js CDNを動的に読み込み
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        document.head.appendChild(script);
+        const xlsxInput = document.createElement('input');
+        xlsxInput.type = 'file';
+        xlsxInput.accept = '.xlsx, .xls';
+        xlsxInput.style.display = 'none';
+        document.body.appendChild(xlsxInput);
+
+        // SheetJS (XLSX処理用) を動的に読み込み
+        const xlsxScript = document.createElement('script');
+        xlsxScript.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+        document.head.appendChild(xlsxScript);
 
         // ローカルストレージ管理
         const STORAGE_KEY = 'karuta_saved_sets';
@@ -1289,160 +1307,123 @@
             }
         }
 
-        // カメラ/ギャラリー選択モーダルを表示
-        function openPhotoSource() {
-            openModal('photoSourceModal');
+        // ファイルアップロードモーダルを表示
+        function openFileUpload() {
+            openModal('fileUploadModal');
         }
 
-        // 写真ソースを選択
-        function selectPhotoSource(source) {
-            closeModal('photoSourceModal');
-            if (source === 'camera') {
-                cameraOnlyInput.click();
-            } else {
-                galleryInput.click();
+        // ファイルタイプを選択
+        function selectFileType(type) {
+            closeModal('fileUploadModal');
+            if (type === 'txt') {
+                txtInput.click();
+            } else if (type === 'csv') {
+                csvInput.click();
+            } else if (type === 'xlsx') {
+                xlsxInput.click();
             }
         }
 
-        // OCR処理の共通関数
-        async function processImageOCR(file) {
-            // OCRモーダルを開いて処理中表示
-            const ocrContent = document.getElementById('ocrContent');
-            ocrContent.innerHTML = `
-                <div class="ocr-processing">
-                    <div class="spinner"></div>
-                    <p>画像を読み取っています...</p>
-                    <p style="font-size: 0.9em; color: #999;">少々お待ちください</p>
-                </div>
-            `;
-            openModal('ocrModal');
+        // テキストファイル処理
+        txtInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const text = await file.text();
+                    showFileResult(text);
+                } catch (error) {
+                    alert('ファイルの読み込みに失敗しました');
+                }
+                e.target.value = '';
+            }
+        });
 
-            try {
-                // Tesseract.jsが読み込まれるまで待つ
+        // CSVファイル処理
+        csvInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const text = await file.text();
+                    // CSVを解析（カンマ区切り、1列目のみ使用）
+                    const lines = text.split('\n')
+                        .map(line => line.split(',')[0].trim())
+                        .filter(line => line !== '');
+                    showFileResult(lines.join('\n'));
+                } catch (error) {
+                    alert('CSVファイルの読み込みに失敗しました');
+                }
+                e.target.value = '';
+            }
+        });
+
+        // Excelファイル処理
+        xlsxInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // SheetJSが読み込まれるまで待つ
                 let attempts = 0;
-                while (typeof Tesseract === 'undefined' && attempts < 50) {
+                while (typeof XLSX === 'undefined' && attempts < 50) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                     attempts++;
                 }
 
-                if (typeof Tesseract === 'undefined') {
-                    throw new Error('OCRライブラリの読み込みに失敗しました');
-                }
-
-                // 画像をDataURLに変換（SecurityError回避）
-                const imageDataUrl = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve(e.target.result);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-
-                // OCR実行
-                const result = await Tesseract.recognize(
-                    imageDataUrl,  // fileではなくDataURLを使用
-                    'jpn', // 日本語
-                    {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                const progress = Math.round(m.progress * 100);
-                                const progressP = ocrContent.querySelector('p');
-                                if (progressP) {
-                                    progressP.textContent = `読み取り中: ${progress}%`;
-                                }
-                            }
-                        }
-                    }
-                );
-
-                // テキストを行ごとに分割して表示
-                const text = result.data.text.trim();
-                
-                if (!text) {
-                    ocrContent.innerHTML = `
-                        <div class="ocr-processing">
-                            <p style="color: #ff9800;">⚠️ テキストが見つかりませんでした</p>
-                            <p style="font-size: 0.9em; color: #666;">写真がぼやけているか、文字が小さい可能性があります。<br>より鮮明な写真で試してみてください。</p>
-                            <button class="btn-modal btn-modal-primary" onclick="closeModal('ocrModal')" style="margin-top: 20px;">閉じる</button>
-                        </div>
-                    `;
+                if (typeof XLSX === 'undefined') {
+                    alert('Excelライブラリの読み込みに失敗しました。ページを再読み込みしてください。');
+                    e.target.value = '';
                     return;
                 }
 
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                showOCRResult(lines.join('\n'));
-
-            } catch (error) {
-                console.error('OCR error:', error);
-                
-                let errorMessage = '読み取りに失敗しました';
-                let errorDetail = '別の写真で試してみてください';
-                
-                if (error.message && error.message.includes('insecure')) {
-                    errorMessage = 'セキュリティエラー';
-                    errorDetail = 'このアプリはHTTPS環境で実行する必要があります。<br><br>Netlify、Vercel、GitHub Pagesなどで公開してご利用ください。';
-                } else if (error.message && error.message.includes('ライブラリ')) {
-                    errorMessage = 'OCRライブラリの読み込みエラー';
-                    errorDetail = 'インターネット接続を確認して、ページを再読み込みしてください。';
+                try {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data);
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    // 1列目のデータのみ抽出
+                    const lines = jsonData
+                        .map(row => row[0])
+                        .filter(cell => cell !== undefined && cell !== '')
+                        .map(cell => String(cell).trim());
+                    
+                    showFileResult(lines.join('\n'));
+                } catch (error) {
+                    console.error('Excel error:', error);
+                    alert('Excelファイルの読み込みに失敗しました');
                 }
-                
-                ocrContent.innerHTML = `
-                    <div class="ocr-processing">
-                        <p style="color: #dc3545;">❌ ${errorMessage}</p>
-                        <p style="font-size: 0.9em; color: #666;">${errorDetail}</p>
-                        <button class="btn-modal btn-modal-primary" onclick="closeModal('ocrModal')" style="margin-top: 20px;">閉じる</button>
-                    </div>
-                `;
-            }
-        }
-
-        // カメラ入力の変更イベント
-        cameraOnlyInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await processImageOCR(file);
                 e.target.value = '';
             }
         });
 
-        // ギャラリー入力の変更イベント
-        galleryInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await processImageOCR(file);
-                e.target.value = '';
-            }
-        });
-
-        // 旧来のcameraInput（削除予定だが互換性のため残す）
-        cameraInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await processImageOCR(file);
-                e.target.value = '';
-            }
-        });
-
-        // OCR結果を表示・編集可能に
-        function showOCRResult(text) {
-            const ocrContent = document.getElementById('ocrContent');
-            ocrContent.innerHTML = `
+        // ファイル読み込み結果を表示
+        function showFileResult(text) {
+            const fileResultContent = document.getElementById('fileResultContent');
+            const lineCount = text.split('\n').filter(line => line.trim() !== '').length;
+            
+            fileResultContent.innerHTML = `
                 <div class="ocr-result">
-                    <p style="margin-bottom: 10px; color: #666;">読み取った内容を確認・編集してください：</p>
-                    <textarea id="ocrTextarea">${text}</textarea>
+                    <p style="margin-bottom: 10px; color: #666;">
+                        <strong>📄 読み込んだ内容：</strong><br>
+                        <span style="font-size: 0.9em;">全${lineCount}枚の札を読み込みました</span>
+                    </p>
+                    <textarea id="fileResultTextarea">${text}</textarea>
+                    <p style="font-size: 0.85em; color: #999; margin-top: 5px;">
+                        💡 ヒント：必要に応じて内容を編集できます
+                    </p>
                     <div class="ocr-buttons">
-                        <button class="btn-modal btn-modal-secondary" onclick="closeModal('ocrModal')">キャンセル</button>
-                        <button class="btn-modal btn-modal-primary" onclick="applyOCRResult()">この内容を使う</button>
+                        <button class="btn-modal btn-modal-secondary" onclick="closeModal('fileResultModal')">キャンセル</button>
+                        <button class="btn-modal btn-modal-primary" onclick="applyFileResult()">この内容を使う</button>
                     </div>
                 </div>
             `;
+            openModal('fileResultModal');
         }
 
-        // OCR結果を適用
-        function applyOCRResult() {
-            const ocrTextarea = document.getElementById('ocrTextarea');
-            if (ocrTextarea) {
-                cardInput.value = ocrTextarea.value;
-                closeModal('ocrModal');
+        // ファイル結果を適用
+        function applyFileResult() {
+            const fileResultTextarea = document.getElementById('fileResultTextarea');
+            if (fileResultTextarea) {
+                cardInput.value = fileResultTextarea.value;
+                closeModal('fileResultModal');
             }
         }
 
@@ -1488,7 +1469,7 @@
 
         // イベントリスナー設定
         document.getElementById('selectSetBtn').addEventListener('click', showCardSets);
-        document.getElementById('cameraBtn').addEventListener('click', openPhotoSource);
+        document.getElementById('fileUploadBtn').addEventListener('click', openFileUpload);
         document.getElementById('saveSetBtn').addEventListener('click', showSaveForm);
         document.getElementById('confirmSaveBtn').addEventListener('click', confirmSave);
 
